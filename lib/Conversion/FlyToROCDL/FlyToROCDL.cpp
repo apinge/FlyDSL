@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2025 FlyDSL Project Contributors
 
-
 #include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/Arith/Utils/Utils.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
@@ -32,7 +31,7 @@ using namespace mlir::fly;
 
 namespace {
 
-static unsigned mapAddressSpace(AddressSpace space) {
+inline unsigned mapToLLVMAddressSpace(AddressSpace space) {
   switch (space) {
   case AddressSpace::Global:
     return 1;
@@ -913,13 +912,13 @@ public:
     addConversion([&](fly::MemRefType flyMemRefTy) -> Type {
       if (flyMemRefTy.getAddressSpace().getValue() == AddressSpace::BufferDesc)
         return getBufferFatPtrType(flyMemRefTy.getContext());
-      unsigned as = mapAddressSpace(flyMemRefTy.getAddressSpace().getValue());
+      unsigned as = mapToLLVMAddressSpace(flyMemRefTy.getAddressSpace().getValue());
       return LLVM::LLVMPointerType::get(flyMemRefTy.getContext(), as);
     });
     addConversion([&](fly::PointerType flyPtrTy) -> Type {
       if (flyPtrTy.getAddressSpace().getValue() == AddressSpace::BufferDesc)
         return getBufferFatPtrType(flyPtrTy.getContext());
-      unsigned as = mapAddressSpace(flyPtrTy.getAddressSpace().getValue());
+      unsigned as = mapToLLVMAddressSpace(flyPtrTy.getAddressSpace().getValue());
       return LLVM::LLVMPointerType::get(flyPtrTy.getContext(), as);
     });
   }
@@ -958,8 +957,8 @@ public:
 
     target.addLegalDialect<arith::ArithDialect, scf::SCFDialect, vector::VectorDialect,
                            gpu::GPUDialect, func::FuncDialect, LLVM::LLVMDialect,
-                           ROCDL::ROCDLDialect, fly_rocdl::FlyROCDLDialect>();
-    target.addIllegalDialect<fly::FlyDialect>();
+                           ROCDL::ROCDLDialect>();
+    target.addIllegalDialect<fly::FlyDialect, fly_rocdl::FlyROCDLDialect>();
 
     // Constructors
     target.addLegalOp<StaticOp, MakeIntTupleOp, MakeLayoutOp, MakeTileOp, MakeComposedLayoutOp>();
